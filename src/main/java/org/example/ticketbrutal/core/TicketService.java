@@ -25,7 +25,7 @@ public class TicketService {
 	private final TicketBookingRepository bookingRepository;
 	private final TicketEventRepository eventRepository;
 	private final RedisOperations<String, Object> redis;
-	private final TicketBookPublisher publisher;
+	private final TicketBookEventPublisher eventPublisher;
 
 	private static final Duration BOOKING_DURATION = Duration.ofMinutes(5);
 
@@ -56,7 +56,7 @@ public class TicketService {
 				String.valueOf(booking.getId()),
 				booking.getExpireAt().toEpochMilli()
 		);
-		publisher.publish(booking);
+		eventPublisher.publish(booking);
 
 		return booking;
 	}

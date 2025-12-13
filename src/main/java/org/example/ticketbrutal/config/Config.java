@@ -1,17 +1,26 @@
 package org.example.ticketbrutal.config;
 
 import org.example.ticketbrutal.core.RedisKeys;
+import org.example.ticketbrutal.core.TicketBookConsumer;
 import org.example.ticketbrutal.core.TicketBookSubscriber;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.stream.Consumer;
+import org.springframework.data.redis.connection.stream.MapRecord;
+import org.springframework.data.redis.connection.stream.ReadOffset;
+import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.stream.StreamMessageListenerContainer;
+import org.springframework.data.redis.stream.StreamMessageListenerContainer.StreamMessageListenerContainerOptions;
 import tools.jackson.databind.ObjectMapper;
+
+import java.time.Duration;
 
 /************************
  * Made by [MR Ferry™]  *
@@ -47,6 +56,27 @@ public class Config {
 		template.setHashKeySerializer(stringSerializer);
 		template.setHashValueSerializer(jsonSerializer);
 		return template;
+	}
+
+	@Bean
+	public StreamMessageListenerContainer<String, MapRecord<String, String, String>> streamContainer(RedisConnectionFactory factory, TicketBookConsumer consumer) {
+
+		StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options = StreamMessageListenerContainerOptions
+				.builder()
+				.pollTimeout(Duration.ofSeconds(2))
+				.build();
+
+		StreamMessageListenerContainer<String, MapRecord<String, String, String>> container =
+				StreamMessageListenerContainer.create(factory, options);
+
+		container.receive(
+				Consumer.from(RedisKeys.TICKET_SERVICES_GROUP, RedisKeys.TICKET_BOOK_CHANNEL),
+				StreamOffset.create(RedisKeys.TICKET_BOOK_CHANNEL, ReadOffset.from("0")),
+				consumer
+		);
+
+		container.start();
+		return container;
 	}
 
 }
