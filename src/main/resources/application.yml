@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: 'jdbc:postgresql://localhost:5432/ticket'
+    username: 'postgres'
+    password: '12345'
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: '12345'
+  application:
+    name: ticket-brutal
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: on
+server:
+  port: 6080
