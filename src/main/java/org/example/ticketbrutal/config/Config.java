@@ -1,5 +1,7 @@
 package org.example.ticketbrutal.config;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.example.ticketbrutal.core.RedisKeys;
 import org.example.ticketbrutal.core.TicketBookConsumer;
 import org.example.ticketbrutal.core.TicketBookSubscriber;
@@ -20,6 +22,7 @@ import org.springframework.data.redis.stream.StreamMessageListenerContainer;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer.StreamMessageListenerContainerOptions;
 import tools.jackson.databind.ObjectMapper;
 
+import java.net.InetAddress;
 import java.time.Duration;
 
 /************************
@@ -27,6 +30,7 @@ import java.time.Duration;
  * on Desember 2025     *
  ************************/
 
+@Slf4j
 @Configuration
 public class Config {
 
@@ -64,19 +68,25 @@ public class Config {
 		StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options = StreamMessageListenerContainerOptions
 				.builder()
 				.pollTimeout(Duration.ofSeconds(2))
+				.errorHandler(t -> log.error("Stream listener error", t))
 				.build();
 
 		StreamMessageListenerContainer<String, MapRecord<String, String, String>> container =
 				StreamMessageListenerContainer.create(factory, options);
 
 		container.receive(
-				Consumer.from(RedisKeys.TICKET_SERVICES_GROUP, RedisKeys.TICKET_BOOK_CHANNEL),
-				StreamOffset.create(RedisKeys.TICKET_BOOK_CHANNEL, ReadOffset.from("0")),
+				Consumer.from(RedisKeys.TICKET_SERVICES_GROUP, getName()),
+				StreamOffset.create(RedisKeys.TICKET_BOOK_CHANNEL, ReadOffset.lastConsumed()),
 				consumer
 		);
 
 		container.start();
 		return container;
+	}
+
+	@SneakyThrows
+	private static String getName(){
+		return InetAddress.getLocalHost().getHostName();
 	}
 
 }
