@@ -17,3 +17,10 @@ spring:
     show-sql: on
 server:
   port: 6080
+
+kind: Application
+logging:
+  file:
+    name: app.log
+  threshold:
+    file: WARN
